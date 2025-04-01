@@ -7,3 +7,4 @@ plotly
 statsbombpy
 requests
 urllib3
+statsmodels
