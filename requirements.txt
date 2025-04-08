@@ -8,3 +8,4 @@ statsbombpy
 requests
 urllib3
 statsmodels
+mplsoccer 
