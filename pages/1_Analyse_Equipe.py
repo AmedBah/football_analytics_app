@@ -9,6 +9,11 @@ from statsbombpy import sb
 from mplsoccer import Pitch, VerticalPitch
 import sys
 import os
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='statsbombpy')
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
 
 # Ajouter le répertoire parent au chemin pour importer les fonctions utilitaires
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

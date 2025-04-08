@@ -6,7 +6,8 @@ import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 from statsbombpy import sb
-
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning, module='statsbombpy')
 # Configuration de la page
 st.set_page_config(
     page_title="Football Analytics Dashboard",

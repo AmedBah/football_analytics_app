@@ -55,7 +55,7 @@ def load_players(team_name: str, competition_id: int, season_id: int):
         st.error(f"Erreur lors du chargement des joueurs : {e}")
         return pd.DataFrame()
 
-#@st.cache_data
+@st.cache_data
 def load_events(match_id: int):
     """Charge tous les événements d’un match donné."""
     try:
