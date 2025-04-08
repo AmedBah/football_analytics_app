@@ -15,43 +15,136 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Styles CSS personnalisés
+# Template HTML/CSS sportif
 st.markdown("""
 <style>
+    /* Importation de la police Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    /* Variables de style */
+    :root {
+        --primary-color: #00A1D6; /* Bleu sportif vif */
+        --secondary-color: #1A3C34; /* Vert sombre football */
+        --accent-color: #FFD700; /* Jaune pour accents */
+        --bg-color: #F5F6F5; /* Fond gris clair */
+        --card-bg: #FFFFFF;
+        --text-color: #1A3C34;
+        --shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Style global */
+    body {
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        margin: 0;
+        padding: 0;
+    }
+
+    /* En-tête principal */
     .main-header {
-        font-size: 2.5rem;
-        color: #1E88E5;
+        font-size: 3.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
         text-align: center;
-        margin-bottom: 1rem;
+        margin: 2rem 0;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
     }
+
+    /* Sous-titre */
     .sub-header {
-        font-size: 1.5rem;
-        color: #424242;
-        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        font-weight: 600;
+        color: var(--secondary-color);
+        margin-bottom: 1.5rem;
+        text-align: center;
     }
-    .card {
-        background-color: #f9f9f9;
-        border-radius: 10px;
+
+    /* Conteneur principal */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
         padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
-        color: #333333;
     }
-    /* Amélioration de la visibilité du texte */
-    p, li, h1, h2, h3, h4, h5, h6 {
-        color: #333333;
+
+    /* Cartes */
+    .card {
+        background-color: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: var(--shadow);
+        margin-bottom: 25px;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-left: 5px solid var(--primary-color);
     }
-    .stMarkdown {
-        color: #333333;
+
+    .card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
     }
-    /* Assurer que le texte est visible sur fond sombre */
-    div[data-testid="stVerticalBlock"] {
-        color: #333333;
+
+    .card h3 {
+        color: var(--secondary-color);
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 15px;
+    }
+
+    .card p, .card ul {
+        color: var(--text-color);
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .card ul {
+        list-style-type: none;
+        padding-left: 0;
+    }
+
+    .card ul li:before {
+        content: "⚽ ";
+        color: var(--accent-color);
+    }
+
+    /* Texte d'introduction */
+    .intro-text {
+        font-size: 1.2rem;
+        text-align: center;
+        color: var(--text-color);
+        max-width: 900px;
+        margin: 0 auto 3rem auto;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+    }
+
+    /* Boutons */
+    .stButton>button {
+        background-color: var(--primary-color);
+        color: #FFFFFF;
+        border-radius: 8px;
+        padding: 12px 25px;
+        font-weight: 700;
+        text-transform: uppercase;
+        border: none;
+        transition: background-color 0.3s ease;
+    }
+
+    .stButton>button:hover {
+        background-color: #007BB5;
+    }
+
+    /* Ajustement des colonnes */
+    .stColumn {
+        padding: 10px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Fonction pour charger les données StatsBomb
+# Fonctions pour charger les données StatsBomb (inchangées)
 @st.cache_data
 def load_competitions():
     return sb.competitions()
@@ -76,7 +169,6 @@ def load_players(team_name, competition_id, season_id):
     if not match_ids:
         return pd.DataFrame()
     
-    # Prendre le premier match pour obtenir les joueurs
     lineups = sb.lineups(match_id=match_ids[0])
     players = lineups.get(team_name, pd.DataFrame())
     return players
@@ -87,26 +179,26 @@ def main():
     
     # Introduction
     st.markdown("""
-    <div class='card'>
-        <h2 class='sub-header'>Bienvenue dans votre plateforme d'analyse footballistique</h2>
-        <p>Cette application permet aux entraîneurs et analystes d'explorer et d'analyser les performances des équipes et des joueurs 
-        grâce à la data science appliquée au football. Utilisez la barre de navigation ci-dessus pour accéder aux différentes sections d'analyse.</p>
+    <div class='intro-text'>
+        Plongez dans l'univers de l'analyse footballistique avancée. Exploitez des données précises pour optimiser les performances des équipes et des joueurs comme jamais auparavant.
     </div>
     """, unsafe_allow_html=True)
     
-    # Présentation des fonctionnalités
+    # Conteneur pour les fonctionnalités
+    st.markdown("<div class='container'>", unsafe_allow_html=True)
+    
+    # Présentation des fonctionnalités avec colonnes
     col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
         <div class='card'>
             <h3>📊 Analyse d'Équipe</h3>
-            <p>Explorez les performances globales, comparez les équipes et visualisez les tendances tactiques.</p>
+            <p>Explorez les performances collectives avec des outils visuels puissants.</p>
             <ul>
-                <li>Classement et performance</li>
-                <li>Comparaison entre équipes</li>
-                <li>Heatmaps et zones d'action</li>
-                <li>Corrélations statistiques</li>
+                <li>Classement et stats clés</li>
+                <li>Comparaisons tactiques</li>
+                <li>Heatmaps dynamiques</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -115,12 +207,11 @@ def main():
         st.markdown("""
         <div class='card'>
             <h3>👤 Analyse de Joueurs</h3>
-            <p>Évaluez les performances individuelles, comparez les joueurs et suivez leur évolution.</p>
+            <p>Évaluez les talents individuels avec des métriques détaillées.</p>
             <ul>
-                <li>Comparaison intra-club et inter-club</li>
-                <li>Analyse des variations de performance</li>
-                <li>Suivi des performances dans le temps</li>
-                <li>Chronologie annotée</li>
+                <li>Comparaisons inter-joueurs</li>
+                <li>Suivi des performances</li>
+                <li>Statistiques personnalisées</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -129,26 +220,27 @@ def main():
         st.markdown("""
         <div class='card'>
             <h3>🔍 Analyse Tactique</h3>
-            <p>Visualisez les schémas tactiques, les zones d'influence et les circuits de jeu.</p>
+            <p>Décryptez les schémas de jeu pour une stratégie gagnante.</p>
             <ul>
                 <li>Cartes de chaleur</li>
-                <li>Schémas tactiques</li>
-                <li>Flèches de mouvement</li>
-                <li>Analyse des circuits préférentiels</li>
+                <li>Schémas de passes</li>
+                <li>Analyse des mouvements</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
     
+    st.markdown("</div>", unsafe_allow_html=True)
+    
     # Données disponibles
-    st.markdown("<h2 class='sub-header'>Données disponibles</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 class='sub-header'>Données à Votre Portée</h2>", unsafe_allow_html=True)
     
     try:
         competitions = load_competitions()
-        st.write("Compétitions disponibles dans StatsBomb:")
-        st.dataframe(competitions.head())
+        st.write("Compétitions disponibles dans StatsBomb :")
+        st.dataframe(competitions.head(), use_container_width=True)
     except Exception as e:
-        st.error(f"Erreur lors du chargement des données StatsBomb: {e}")
-        st.info("Assurez-vous d'avoir accès aux données StatsBomb et que les API sont correctement configurées.")
+        st.error(f"Erreur lors du chargement des données : {e}")
+        st.info("Vérifiez votre accès aux API StatsBomb.")
 
 if __name__ == "__main__":
     main()

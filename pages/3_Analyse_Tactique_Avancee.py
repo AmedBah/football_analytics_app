@@ -9,6 +9,8 @@ from statsbombpy import sb
 import sys
 import os
 import matplotlib.patches as patches
+from mplsoccer import Pitch, VerticalPitch
+
 
 # Ajouter le répertoire parent au chemin pour importer les fonctions utilitaires
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -139,178 +141,109 @@ try:
         
         # Statistiques de possession
         st.subheader("Statistiques de possession")
-        
-        # Générer des données fictives pour la possession
-        home_possession = np.random.randint(35, 65)
-        away_possession = 100 - home_possession
-        
+
+        # Fonction pour calculer la possession globale
+        def calculate_possession(team_name, matches):
+            possession_data = []
+
+            for _, match in matches.iterrows():
+                match_id = match["match_id"]
+                events = load_events(match_id)  # Charger les événements du match
+                team_events = events[events["team"] == team_name]
+                
+                possession_time = 0  # Initialisation du temps de possession
+
+                # Boucle à travers les événements et calculer la possession
+                for _, event in team_events.iterrows():
+                    if event["type"] == "Pass" or event["type"] == "Carry":
+                        possession_time += 1  # Exemple d'attribution d'une unité de temps pour chaque événement
+
+                # Calculer la possession en pourcentage
+                total_event_time = len(team_events)
+                possession_percentage = (possession_time / total_event_time) * 100 if total_event_time > 0 else 0
+                possession_data.append(possession_percentage)
+
+            return possession_data
+
+        # Calcul de la possession pour chaque match (sans notion de période)
+        home_possession = calculate_possession(
+            team_name=selected_match_home, 
+            matches=team_matches[team_matches["home_team"] == selected_match_home]
+        )
+
+        away_possession = calculate_possession(
+            team_name=selected_match_away, 
+            matches=team_matches[team_matches["away_team"] == selected_match_away]
+        )
+
+        # Affichage des métriques de possession
+        st.subheader("Possession globale")
         col1, col2, col3 = st.columns([2, 1, 2])
-        
         with col1:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{home_possession}%</div>
-                <div class='metric-label'>{selected_match_home}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+            home_possession = round(np.mean(home_possession), 2)
+            st.metric("Possession à domicile (%)", home_possession)
         with col2:
             st.markdown("<div style='text-align: center; padding-top: 20px;'>vs</div>", unsafe_allow_html=True)
-        
         with col3:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{away_possession}%</div>
-                <div class='metric-label'>{selected_match_away}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        # Graphique de possession par période
-        st.subheader("Possession par période")
-        
-        # Générer des données fictives pour la possession par période
-        periods = ["0-15'", "15-30'", "30-45'", "45-60'", "60-75'", "75-90'"]
-        home_possession_periods = [np.random.randint(35, 65) for _ in range(len(periods))]
-        away_possession_periods = [100 - p for p in home_possession_periods]
-        
-        possession_data = pd.DataFrame({
-            'Période': periods,
-            selected_match_home: home_possession_periods,
-            selected_match_away: away_possession_periods
-        })
-        
-        fig = px.bar(
-            possession_data,
-            x='Période',
-            y=[selected_match_home, selected_match_away],
-            barmode='stack',
-            title="Évolution de la possession par période"
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
+            away_possession = round(np.mean(away_possession), 2)
+            st.metric("Possession à l'extérieur (%)", away_possession)
+
+        # ⚠️ Retirer le graphique "par période" car la période est supprimée
+        # Tu peux le remplacer par un graphique global si tu veux
+
         # Carte de chaleur de la possession
         st.subheader("Carte de chaleur de la possession")
-        
-        # Créer un terrain de football
         pitch_length = 120
         pitch_width = 80
-        
         fig, ax = plt.subplots(figsize=(12, 8))
         
         # Dessiner le terrain
-        # Rectangle principal
-        ax.plot([0, 0, pitch_length, pitch_length, 0], [0, pitch_width, pitch_width, 0, 0], color='black')
-        
-        # Ligne médiane
-        ax.plot([pitch_length/2, pitch_length/2], [0, pitch_width], color='black')
-        
-        # Cercle central
-        central_circle = plt.Circle((pitch_length/2, pitch_width/2), 9.15, fill=False, color='black')
+        ax.plot([0, 0, pitch_length, pitch_length, 0], [0, pitch_width, pitch_width, 0, 0], color="black")
+        ax.plot([pitch_length / 2, pitch_length / 2], [0, pitch_width], color="black")
+        central_circle = plt.Circle((pitch_length / 2, pitch_width / 2), 9.15, fill=False, color="black")
         ax.add_artist(central_circle)
+        ax.plot([0, 16.5, 16.5, 0], [pitch_width / 2 - 20.15, pitch_width / 2 - 20.15, pitch_width / 2 + 20.15, pitch_width / 2 + 20.15], color="black")
+        ax.plot([pitch_length, pitch_length - 16.5, pitch_length - 16.5, pitch_length], [pitch_width / 2 - 20.15, pitch_width / 2 - 20.15, pitch_width / 2 + 20.15, pitch_width / 2 + 20.15], color="black")
+        ax.plot([0, 5.5, 5.5, 0], [pitch_width / 2 - 9.16, pitch_width / 2 - 9.16, pitch_width / 2 + 9.16, pitch_width / 2 + 9.16], color="black")
+        ax.plot([pitch_length, pitch_length - 5.5, pitch_length - 5.5, pitch_length], [pitch_width / 2 - 9.16, pitch_width / 2 - 9.16, pitch_width / 2 + 9.16, pitch_width / 2 + 9.16], color="black")
+        ax.plot(11, pitch_width / 2, marker="o", markersize=2, color="black")
+        ax.plot(pitch_length - 11, pitch_width / 2, marker="o", markersize=2, color="black")
         
-        # Surfaces de réparation
-        # Gauche
-        ax.plot([0, 16.5, 16.5, 0], [pitch_width/2 - 20.15, pitch_width/2 - 20.15, pitch_width/2 + 20.15, pitch_width/2 + 20.15], color='black')
-        # Droite
-        ax.plot([pitch_length, pitch_length - 16.5, pitch_length - 16.5, pitch_length], [pitch_width/2 - 20.15, pitch_width/2 - 20.15, pitch_width/2 + 20.15, pitch_width/2 + 20.15], color='black')
-        
-        # Surfaces de but
-        # Gauche
-        ax.plot([0, 5.5, 5.5, 0], [pitch_width/2 - 9.16, pitch_width/2 - 9.16, pitch_width/2 + 9.16, pitch_width/2 + 9.16], color='black')
-        # Droite
-        ax.plot([pitch_length, pitch_length - 5.5, pitch_length - 5.5, pitch_length], [pitch_width/2 - 9.16, pitch_width/2 - 9.16, pitch_width/2 + 9.16, pitch_width/2 + 9.16], color='black')
-        
-        # Points de penalty
-        ax.plot(11, pitch_width/2, marker='o', markersize=2, color='black')
-        ax.plot(pitch_length - 11, pitch_width/2, marker='o', markersize=2, color='black')
-        
-        # Générer des données fictives pour la heatmap de possession
-        # Simuler une distribution de possession basée sur l'équipe sélectionnée
-        if selected_team == selected_match_home:
-            # Si l'équipe sélectionnée est l'équipe à domicile
-            # Simuler une concentration plus élevée dans la moitié offensive
-            x = np.concatenate([
-                np.random.normal(pitch_length/4, pitch_length/8, 300),  # Défense
-                np.random.normal(pitch_length/2, pitch_length/6, 500),  # Milieu
-                np.random.normal(3*pitch_length/4, pitch_length/8, 200)  # Attaque
-            ])
+
+        # Extraire les positions des actions de possession
+        def extract_possession_heatmap_data(team_name, matches):
+            x_coords = []
+            y_coords = []
+
+            for _, match in matches.iterrows():
+                match_id = match["match_id"]
+                events = load_events(match_id)
+                team_events = events[events["team"] == team_name]
+
+                for _, event in team_events.iterrows():
+                    if "location" in event and isinstance(event["location"], list):
+                        x_coords.append(event["location"][0])
+                        y_coords.append(event["location"][1])
+
+            return x_coords, y_coords
+        # Extraire les positions des actions de possession
+        x_coords, y_coords = extract_possession_heatmap_data(selected_team, team_matches)
+
+        if len(x_coords) > 0 and len(y_coords) > 0:
+            sns.kdeplot(
+                x=x_coords,
+                y=y_coords,
+                ax=ax,
+                cmap="YlOrRd",
+                fill=True,
+                levels=100,
+                thresh=0,
+                bw_adjust=1
+            )
+            st.pyplot(fig)
         else:
-            # Si l'équipe sélectionnée est l'équipe à l'extérieur
-            # Simuler une concentration plus élevée dans la moitié défensive
-            x = np.concatenate([
-                np.random.normal(pitch_length/4, pitch_length/8, 500),  # Défense
-                np.random.normal(pitch_length/2, pitch_length/6, 300),  # Milieu
-                np.random.normal(3*pitch_length/4, pitch_length/8, 200)  # Attaque
-            ])
+            st.warning("Aucune donnée disponible pour générer la heatmap.")
         
-        y = np.random.normal(pitch_width/2, pitch_width/3, len(x))
-        
-        # Créer la heatmap
-        heatmap = ax.hexbin(x, y, gridsize=30, cmap='YlOrRd', alpha=0.7)
-        plt.colorbar(heatmap, ax=ax, label='Densité de possession')
-        
-        ax.set_xlim(-5, pitch_length + 5)
-        ax.set_ylim(-5, pitch_width + 5)
-        ax.set_title(f"Heatmap de possession - {selected_team}")
-        ax.set_xlabel("Longueur du terrain (m)")
-        ax.set_ylabel("Largeur du terrain (m)")
-        ax.set_aspect('equal')
-        
-        # Afficher la heatmap
-        st.pyplot(fig)
-        
-        # Analyse de la possession
-        st.markdown("""
-        <div class='card'>
-            <h3>Analyse de la possession</h3>
-            <p>Cette visualisation montre les zones du terrain où l'équipe a eu le plus de possession du ballon. Les zones en rouge indiquent une forte concentration de possession, tandis que les zones en jaune indiquent une concentration plus faible.</p>
-            <p>L'analyse de la possession peut aider à :</p>
-            <ul>
-                <li>Identifier les zones de contrôle préférentielles de l'équipe</li>
-                <li>Comprendre la stratégie de construction du jeu</li>
-                <li>Détecter les déséquilibres dans la répartition de la possession</li>
-                <li>Évaluer l'efficacité de la pression adverse</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Métriques avancées de possession
-        st.subheader("Métriques avancées de possession")
-        
-        col1, col2, col3, col4 = st.columns(4)
-        
-        with col1:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{np.random.randint(5, 15)}</div>
-                <div class='metric-label'>Séquences de 10+ passes</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{np.random.randint(20, 40)}</div>
-                <div class='metric-label'>Entrées dans le dernier tiers</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{np.random.randint(3, 8)}</div>
-                <div class='metric-label'>Temps moyen de possession (sec)</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col4:
-            st.markdown(f"""
-            <div class='metric-container'>
-                <div class='metric-value'>{np.random.randint(40, 70)}%</div>
-                <div class='metric-label'>Possession dans le camp adverse</div>
-            </div>
-            """, unsafe_allow_html=True)
     
     # Onglet 2: Analyse des Passes
     with tab2:
@@ -319,11 +252,14 @@ try:
         # Statistiques de passes
         st.subheader("Statistiques de passes")
         
-        # Générer des données fictives pour les passes
-        home_passes = np.random.randint(400, 700)
-        away_passes = np.random.randint(400, 700)
-        home_accuracy = np.random.randint(75, 90)
-        away_accuracy = np.random.randint(75, 90)
+        st.write(team_matches["home_team"])
+
+        # Générer des données fictives pour les passes team_events[team_events["type"] == "Pass"].shape[0]
+        home_passes = np.mean(team_matches[team_matches["home_team"] == selected_team]["pass"])
+        away_passes = np.mean(team_matches[team_matches["away_team"] == selected_team]["pass"])
+        home_accuracy = round(np.mean(team_matches[team_matches["home_team"] == selected_team]["pass_accuracy"]) * 100, 2)
+        away_accuracy = round(np.mean(team_matches[team_matches["away_team"] == selected_team]["pass_accuracy"]) * 100, 2)
+
         
         col1, col2 = st.columns(2)
         
@@ -352,89 +288,51 @@ try:
         # Réseau de passes
         st.subheader("Réseau de passes")
         
-        # Créer un terrain de football pour le réseau de passes
-        pitch_length = 120
-        pitch_width = 80
-        
-        fig, ax = plt.subplots(figsize=(12, 8))
-        
-        # Dessiner le terrain
-        # Rectangle principal
-        ax.plot([0, 0, pitch_length, pitch_length, 0], [0, pitch_width, pitch_width, 0, 0], color='black')
-        
-        # Ligne médiane
-        ax.plot([pitch_length/2, pitch_length/2], [0, pitch_width], color='black')
-        
-        # Cercle central
-        central_circle = plt.Circle((pitch_length/2, pitch_width/2), 9.15, fill=False, color='black')
-        ax.add_artist(central_circle)
-        
-        # Surfaces de réparation
-        # Gauche
-        ax.plot([0, 16.5, 16.5, 0], [pitch_width/2 - 20.15, pitch_width/2 - 20.15, pitch_width/2 + 20.15, pitch_width/2 + 20.15], color='black')
-        # Droite
-        ax.plot([pitch_length, pitch_length - 16.5, pitch_length - 16.5, pitch_length], [pitch_width/2 - 20.15, pitch_width/2 - 20.15, pitch_width/2 + 20.15, pitch_width/2 + 20.15], color='black')
-        
-        # Surfaces de but
-        # Gauche
-        ax.plot([0, 5.5, 5.5, 0], [pitch_width/2 - 9.16, pitch_width/2 - 9.16, pitch_width/2 + 9.16, pitch_width/2 + 9.16], color='black')
-        # Droite
-        ax.plot([pitch_length, pitch_length - 5.5, pitch_length - 5.5, pitch_length], [pitch_width/2 - 9.16, pitch_width/2 - 9.16, pitch_width/2 + 9.16, pitch_width/2 + 9.16], color='black')
-        
-        # Points de penalty
-        ax.plot(11, pitch_width/2, marker='o', markersize=2, color='black')
-        ax.plot(pitch_length - 11, pitch_width/2, marker='o', markersize=2, color='black')
-        
-        # Simuler des positions de joueurs
-        # Formation 4-3-3
-        player_positions = [
-            (10, pitch_width/2),  # GK
-            (30, pitch_width/5),  # RB
-            (30, 2*pitch_width/5),  # CB
-            (30, 3*pitch_width/5),  # CB
-            (30, 4*pitch_width/5),  # LB
-            (60, pitch_width/4),  # CM
-            (60, pitch_width/2),  # CM
-            (60, 3*pitch_width/4),  # CM
-            (90, pitch_width/4),  # RW
-            (90, pitch_width/2),  # ST
-            (90, 3*pitch_width/4)  # LW
-        ]
-        
+        # Réseau de passes
+        st.subheader("Réseau de passes")
+        pitch = Pitch(pitch_type="statsbomb", line_zorder=2, pitch_color="#22312b", line_color="#efefef")
+        fig, ax = pitch.draw(figsize=(12, 8))
+
+        # Extraire les positions des passes
+        def extract_pass_network_data(team_name, matches):
+            x_coords = []
+            y_coords = []
+
+            for _, match in matches.iterrows():
+                match_id = match["match_id"]
+                events = load_events(match_id)
+                team_events = events[events["team"] == team_name]
+
+                for _, event in team_events.iterrows():
+                    if "location" in event and isinstance(event["location"], list):
+                        x_coords.append(event["location"][0])
+                        y_coords.append(event["location"][1])
+
+            return x_coords, y_coords
+
+        x_coords, y_coords = extract_pass_network_data(selected_team, team_matches)
+
         # Dessiner les joueurs
-        for i, (x, y) in enumerate(player_positions):
-            circle = plt.Circle((x, y), 3, color='blue', fill=True)
-            ax.add_artist(circle)
-            ax.text(x, y - 5, str(i+1), fontsize=8, ha='center')
-        
-        # Simuler des passes entre les joueurs
-        n_passes = 30
-        for _ in range(n_passes):
-            # Sélectionner deux joueurs aléatoires
-            player1_idx = np.random.randint(0, len(player_positions))
-            player2_idx = np.random.randint(0, len(player_positions))
-            
-            # Éviter les passes vers soi-même
-            while player1_idx == player2_idx:
-                player2_idx = np.random.randint(0, len(player_positions))
-            
-            # Récupérer les positions des joueurs
-            x1, y1 = player_positions[player1_idx]
-            x2, y2 = player_positions[player2_idx]
-            
-            # Dessiner la flèche de passe
-            # L'épaisseur de la flèche est proportionnelle au nombre de passes
-            width = np.random.uniform(0.5, 2.5)
-            ax.arrow(x1, y1, x2-x1, y2-y1, head_width=2, head_length=2, fc='blue', ec='blue', alpha=0.4, width=width)
-        
+        for i, (x, y) in enumerate(zip(x_coords, y_coords)):
+            ax.plot(x, y, "bo", markersize=8)
+            ax.text(x, y - 5, str(i + 1), fontsize=8, ha="center")
+
+        # Dessiner les flèches de passes
+        pass_network = pd.DataFrame({"x": x_coords, "y": y_coords})
+        pass_network["dx"] = pass_network["x"].shift(-1) - pass_network["x"]
+        pass_network["dy"] = pass_network["y"].shift(-1) - pass_network["y"]
+
+        for _, row in pass_network.iterrows():
+            if row["dx"] != 0 and row["dy"] != 0:
+                ax.arrow(row["x"], row["y"], row["dx"], row["dy"], head_width=2, head_length=2, fc="blue", ec="blue", alpha=0.4, width=1)
+
         ax.set_xlim(-5, pitch_length + 5)
         ax.set_ylim(-5, pitch_width + 5)
         ax.set_title(f"Réseau de passes - {selected_team}")
         ax.set_xlabel("Longueur du terrain (m)")
         ax.set_ylabel("Largeur du terrain (m)")
-        ax.set_aspect('equal')
-        
-        # Afficher le réseau de passes
+        ax.set_aspect("equal")
+
         st.pyplot(fig)
         
         # Analyse du réseau de passes
